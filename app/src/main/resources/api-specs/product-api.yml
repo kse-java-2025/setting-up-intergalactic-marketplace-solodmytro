@@ -1,0 +1,265 @@
+openapi: 3.0.0
+info:
+  title: Cosmo Cats Marketplace – Product API
+  description: API for managing space-goods products in the Intergalactic Marketplace
+  version: 1.0.0
+
+paths:
+  /api/v1/products:
+    get:
+      summary: Get all products
+      tags:
+        - Products
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 0
+          description: Page number (0-based)
+        - in: query
+          name: size
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+          description: Page size
+      responses:
+        '200':
+          description: List of all products
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductListDto'
+    post:
+      summary: Create a new product
+      tags:
+        - Products
+      requestBody:
+        description: Product data to create a new product
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductCreateDto'
+      responses:
+        '201':
+          description: Product created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDto'
+        '400':
+          description: Invalid input
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+
+  /api/v1/products/{id}:
+    get:
+      summary: Get product by ID
+      tags:
+        - Products
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: ID of the product to retrieve
+      responses:
+        '200':
+          description: Product found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDto'
+        '404':
+          description: Product not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+    put:
+      summary: Update an existing product
+      tags:
+        - Products
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: ID of the product to update
+      requestBody:
+        description: Product data to update
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductUpdateDto'
+      responses:
+        '200':
+          description: Product updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDto'
+        '400':
+          description: Invalid input
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '404':
+          description: Product not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+    delete:
+      summary: Delete a product by ID
+      tags:
+        - Products
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: ID of the product to delete
+      responses:
+        '204':
+          description: Product deleted successfully or did not exist
+
+components:
+  schemas:
+    ProductDto:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier of the product
+        name:
+          type: string
+          maxLength: 255
+          description: Name of the product
+        description:
+          type: string
+          description: Detailed description of the product
+        category:
+          type: string
+          description: Category the product belongs to
+        price:
+          type: number
+          format: double
+          minimum: 0.01
+          description: Price of the product (must be > 0)
+        cosmicTag:
+          type: string
+          description: Cosmic tag (must include "star", "galaxy", or "comet")
+      required:
+        - id
+        - name
+        - price
+
+    ProductCreateDto:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          description: Name of the product
+        description:
+          type: string
+          description: Detailed description of the product
+        category:
+          type: string
+          description: Category the product belongs to
+        price:
+          type: number
+          format: double
+          minimum: 0.01
+          description: Price of the product (must be > 0)
+        cosmicTag:
+          type: string
+          description: Cosmic tag (must include "star", "galaxy", or "comet")
+      required:
+        - name
+        - price
+
+    ProductUpdateDto:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          description: Name of the product
+        description:
+          type: string
+        category:
+          type: string
+        price:
+          type: number
+          format: double
+          minimum: 0.01
+        cosmicTag:
+          type: string
+
+    ProductListDto:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductDto'
+        page:
+          type: integer
+          description: Current page number
+        size:
+          type: integer
+          description: Page size
+        totalItems:
+          type: integer
+          description: Total number of items
+        totalPages:
+          type: integer
+          description: Total number of pages
+
+    ProblemDetails:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri
+          description: A URI reference identifying the problem type
+        title:
+          type: string
+          description: Short summary of the problem
+        status:
+          type: integer
+          description: HTTP status code for this occurrence of the problem
+        detail:
+          type: string
+          description: Detailed description of the particular problem occurrence
+        instance:
+          type: string
+          description: URI reference identifying the specific occurrence of the problem
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                description: Field where validation error occurred
+              message:
+                type: string
+                description: Reason for the validation error
+          description: List of validation error details
+      required:
+        - type
+        - title
+        - status
+        - detail
