@@ -1,0 +1,8 @@
+{
+  "request": { "method": "GET", "url": "/api/terms" },
+  "response": {
+    "status": 200,
+    "headers": { "Content-Type": "application/json" },
+    "jsonBody": ["star", "galaxy", "comet"]
+  }
+}
