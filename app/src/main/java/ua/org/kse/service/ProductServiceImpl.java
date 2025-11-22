@@ -8,13 +8,12 @@ import ua.org.kse.dto.ProductCreateDto;
 import ua.org.kse.dto.ProductDto;
 import ua.org.kse.dto.ProductListDto;
 import ua.org.kse.dto.ProductUpdateDto;
+import ua.org.kse.error.BadRequestException;
+import ua.org.kse.error.NotFoundException;
 import ua.org.kse.external.CosmicDictionaryClient;
 import ua.org.kse.external.TagServiceException;
 import ua.org.kse.mapper.ProductMapper;
-import ua.org.kse.web.error.BadRequestException;
-import ua.org.kse.web.error.NotFoundException;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -42,25 +41,25 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductDto getById(String id) {
-        Product p = store.get(id);
-        if (p == null) {
-            throw new NotFoundException("Product with id " + id + " not found");
-        }
-
+        Product p = getExistingProductOrThrow(id);
         return mapper.toDto(p);
     }
 
     @Override
     public ProductListDto getAll(int page, int size) {
-        List<Product> all = new ArrayList<>(store.values())
-            .stream()
+        List<Product> all = store.values().stream()
             .sorted(Comparator.comparing(Product::getName, Comparator.nullsLast(String::compareTo)))
             .toList();
 
         int totalItems = all.size();
-        int from = Math.max(0, Math.min(page * size, totalItems));
-        int to = Math.max(from, Math.min(from + size, totalItems));
-        List<Product> slice = all.subList(from, to);
+
+        long startLong = Math.clamp((long) page * size, 0L, totalItems);
+        long endLong = Math.clamp(startLong + size, startLong, totalItems);
+
+        int start = (int) startLong;
+        int end = (int) endLong;
+
+        List<Product> slice = all.subList(start, end);
 
         ProductListDto out = new ProductListDto();
         out.setItems(slice.stream().map(mapper::toDto).toList());
@@ -73,10 +72,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductDto update(String id, ProductUpdateDto dto) {
-        Product existing = store.get(id);
-        if (existing == null) {
-            throw new NotFoundException("Product with id " + id + " not found");
-        }
+        Product existing = getExistingProductOrThrow(id);
 
         validateCosmicTag(dto.getCosmicTag());
 
@@ -88,6 +84,14 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public void delete(String id) {
         store.remove(id);
+    }
+
+    private Product getExistingProductOrThrow(String id) {
+        Product existing = store.get(id);
+        if (existing == null) {
+            throw new NotFoundException("Product with id " + id + " not found");
+        }
+        return existing;
     }
 
     private void validateCosmicTag(String cosmicTag) {

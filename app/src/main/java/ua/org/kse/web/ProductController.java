@@ -2,6 +2,7 @@ package ua.org.kse.web;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -22,13 +23,10 @@ import ua.org.kse.service.ProductService;
 @RestController
 @RequestMapping("/api/v1/products")
 @Validated
+@RequiredArgsConstructor
 public class ProductController {
 
     private final ProductService service;
-
-    public ProductController(ProductService service) {
-        this.service = service;
-    }
 
     @GetMapping
     public ResponseEntity<ProductListDto> getAll(

@@ -10,6 +10,8 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import ua.org.kse.error.BadRequestException;
+import ua.org.kse.error.NotFoundException;
 import ua.org.kse.external.TagServiceException;
 
 import java.net.URI;
@@ -19,6 +21,9 @@ import java.util.Objects;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final String PROBLEM_BASE_URI = "https://example.com/problems/";
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ProblemDetail> handleValidation(MethodArgumentNotValidException ex,
                                                           HttpServletRequest req) {
@@ -116,10 +121,8 @@ public class GlobalExceptionHandler {
                                               String typeSuffix,
                                               HttpServletRequest req) {
         ProblemDetail body = ProblemDetail.forStatusAndDetail(status, detail);
-
         body.setTitle(status.getReasonPhrase());
-
-        body.setType(URI.create("https://example.com/problems/" + typeSuffix));
+        body.setType(URI.create(PROBLEM_BASE_URI + typeSuffix));
         body.setInstance(URI.create(req.getRequestURI()));
         return body;
     }

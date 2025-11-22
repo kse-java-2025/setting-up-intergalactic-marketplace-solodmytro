@@ -24,7 +24,8 @@ public class CosmicDictionaryClient {
             body = client.get()
                 .uri("/api/terms")
                 .retrieve()
-                .onStatus(HttpStatusCode::isError, (req, res) -> { })
+                .onStatus(HttpStatusCode::isError, (req, res) -> {
+                })
                 .body(String[].class);
         } catch (Exception ex) {
             throw new TagServiceException("Failed to fetch allowed cosmic tags", ex);

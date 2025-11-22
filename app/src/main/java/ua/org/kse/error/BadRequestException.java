@@ -1,4 +1,4 @@
-package ua.org.kse.web.error;
+package ua.org.kse.error;
 
 public class BadRequestException extends RuntimeException {
     public BadRequestException(String message) {

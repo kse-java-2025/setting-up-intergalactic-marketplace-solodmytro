@@ -1,4 +1,4 @@
-package ua.org.kse.web.error;
+package ua.org.kse.error;
 
 public class NotFoundException extends RuntimeException {
     public NotFoundException(String message) {
