@@ -27,9 +27,9 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductDto create(ProductCreateDto dto) {
-        if (dto.getCosmicTag() != null && !cosmicClient.isAllowedTag(dto.getCosmicTag())) {
+        if (dto.cosmicTag() != null && !cosmicClient.isAllowedTag(dto.cosmicTag())) {
             throw new BadRequestException(
-                "cosmicTag '" + dto.getCosmicTag() + "' is not allowed by external dictionary");
+                "cosmicTag '" + dto.cosmicTag() + "' is not allowed by external dictionary");
         }
 
         Product domain = mapper.toDomain(dto);
