@@ -67,7 +67,15 @@ public class ProductServiceImpl implements ProductService {
         out.setPage(page);
         out.setSize(size);
         out.setTotalItems(totalItems);
-        out.setTotalPages(size == 0 ? 1 : (int) Math.ceil((double) totalItems / size));
+
+        int totalPages;
+        if (size <= 0) {
+            totalPages = 1;
+        } else {
+            totalPages = Math.max(1, (int) Math.ceil((double) totalItems / size));
+        }
+        out.setTotalPages(totalPages);
+
         return out;
     }
 

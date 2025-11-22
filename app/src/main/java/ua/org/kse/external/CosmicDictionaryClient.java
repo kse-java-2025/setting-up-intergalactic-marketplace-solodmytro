@@ -1,6 +1,5 @@
 package ua.org.kse.external;
 
-import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -24,8 +23,6 @@ public class CosmicDictionaryClient {
             body = client.get()
                 .uri("/api/terms")
                 .retrieve()
-                .onStatus(HttpStatusCode::isError, (req, res) -> {
-                })
                 .body(String[].class);
         } catch (Exception ex) {
             throw new TagServiceException("Failed to fetch allowed cosmic tags", ex);
