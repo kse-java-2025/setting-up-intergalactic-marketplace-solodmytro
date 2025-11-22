@@ -25,7 +25,6 @@ import ua.org.kse.service.ProductService;
 @Validated
 @RequiredArgsConstructor
 public class ProductController {
-
     private final ProductService service;
 
     @GetMapping

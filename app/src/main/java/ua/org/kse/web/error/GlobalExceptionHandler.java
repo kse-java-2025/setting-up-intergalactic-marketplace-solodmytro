@@ -21,7 +21,6 @@ import java.util.Objects;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
     private static final String PROBLEM_BASE_URI = "https://example.com/problems/";
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

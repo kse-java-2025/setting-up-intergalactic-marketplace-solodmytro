@@ -18,11 +18,15 @@ public interface ProductMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "category.name", source = "category")
-    @Mapping(target = "cosmicTag.value", source = "cosmicTag")
+    @Mapping(
+        target = "cosmicTag",
+        expression = "java(dto.cosmicTag() == null ? null : new CosmicTag(dto.cosmicTag()))"
+    )
     Product toDomain(ProductCreateDto dto);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "id", ignore = true)
     @Mapping(target = "category.name", source = "category")
-    @Mapping(target = "cosmicTag.value", source = "cosmicTag")
+    @Mapping(target = "cosmicTag", ignore = true)
     void updateDomain(ProductUpdateDto dto, @MappingTarget Product product);
 }

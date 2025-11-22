@@ -3,6 +3,7 @@ package ua.org.kse.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ua.org.kse.domain.product.CosmicTag;
 import ua.org.kse.domain.product.Product;
 import ua.org.kse.dto.ProductCreateDto;
 import ua.org.kse.dto.ProductDto;
@@ -77,6 +78,11 @@ public class ProductServiceImpl implements ProductService {
         validateCosmicTag(dto.getCosmicTag());
 
         mapper.updateDomain(dto, existing);
+
+        if (dto.getCosmicTag() != null) {
+            existing.setCosmicTag(new CosmicTag(dto.getCosmicTag()));
+        }
+
         store.put(id, existing);
         return mapper.toDto(existing);
     }
