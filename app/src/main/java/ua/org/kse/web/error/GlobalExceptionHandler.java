@@ -9,6 +9,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import ua.org.kse.external.TagServiceException;
 
 import java.util.stream.Collectors;
 
@@ -58,6 +59,21 @@ public class GlobalExceptionHandler {
             .build();
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+            .body(body);
+    }
+
+    @ExceptionHandler(TagServiceException.class)
+    public ResponseEntity<ProblemDetails> handleTagService(TagServiceException ex, HttpServletRequest req) {
+        var body = ProblemDetails.builder()
+            .type("https://example.com/problems/tag-service-error")
+            .title("Cosmic Tag Service Error")
+            .status(HttpStatus.SERVICE_UNAVAILABLE.value())
+            .detail(ex.getMessage())
+            .instance(req.getRequestURI())
+            .build();
+
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
             .contentType(MediaType.APPLICATION_PROBLEM_JSON)
             .body(body);
     }

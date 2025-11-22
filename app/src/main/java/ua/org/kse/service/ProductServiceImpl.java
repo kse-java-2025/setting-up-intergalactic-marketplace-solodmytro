@@ -1,6 +1,7 @@
 package ua.org.kse.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ua.org.kse.domain.product.Product;
 import ua.org.kse.dto.ProductCreateDto;
@@ -8,9 +9,11 @@ import ua.org.kse.dto.ProductDto;
 import ua.org.kse.dto.ProductListDto;
 import ua.org.kse.dto.ProductUpdateDto;
 import ua.org.kse.external.CosmicDictionaryClient;
+import ua.org.kse.external.TagServiceException;
 import ua.org.kse.mapper.ProductMapper;
 import ua.org.kse.web.error.BadRequestException;
 import ua.org.kse.web.error.NotFoundException;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -19,6 +22,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
     private final ProductMapper mapper;
@@ -27,10 +31,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductDto create(ProductCreateDto dto) {
-        if (dto.cosmicTag() != null && !cosmicClient.isAllowedTag(dto.cosmicTag())) {
-            throw new BadRequestException(
-                "cosmicTag '" + dto.cosmicTag() + "' is not allowed by external dictionary");
-        }
+        validateCosmicTag(dto.cosmicTag());
 
         Product domain = mapper.toDomain(dto);
         String id = UUID.randomUUID().toString();
@@ -77,10 +78,7 @@ public class ProductServiceImpl implements ProductService {
             throw new NotFoundException("Product with id " + id + " not found");
         }
 
-        if (dto.getCosmicTag() != null && !cosmicClient.isAllowedTag(dto.getCosmicTag())) {
-            throw new BadRequestException(
-                "cosmicTag '" + dto.getCosmicTag() + "' is not allowed by external dictionary");
-        }
+        validateCosmicTag(dto.getCosmicTag());
 
         mapper.updateDomain(dto, existing);
         store.put(id, existing);
@@ -90,5 +88,21 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public void delete(String id) {
         store.remove(id);
+    }
+
+    private void validateCosmicTag(String cosmicTag) {
+        if (cosmicTag == null) {
+            return;
+        }
+
+        try {
+            if (!cosmicClient.isAllowedTag(cosmicTag)) {
+                throw new BadRequestException(
+                    "cosmicTag '" + cosmicTag + "' is not allowed by external dictionary");
+            }
+        } catch (TagServiceException ex) {
+            log.error("Failed to validate cosmicTag '{}' with external dictionary", cosmicTag, ex);
+            throw ex;
+        }
     }
 }
