@@ -34,9 +34,10 @@ jobs:
       - name: Grant execute permission for Gradlew
         run: chmod +x ./gradlew
 
-      - name: Build with Gradle
+      - name: Run tests with coverage
         uses: gradle/gradle-build-action@v3
         with:
+          arguments: :app:clean :app:test
           cache-disabled: true
           generate-job-summary: false
 
@@ -44,4 +45,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-coverage-report
-          path: '**/build/reports/coverage/**'
+          path: app/build/reports/coverage/**
+          if-no-files-found: warn
