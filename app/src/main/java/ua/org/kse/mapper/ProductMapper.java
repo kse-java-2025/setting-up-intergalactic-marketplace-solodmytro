@@ -1,8 +1,10 @@
 package ua.org.kse.mapper;
 
+import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 import ua.org.kse.domain.product.Product;
 import ua.org.kse.dto.ProductCreateDto;
 import ua.org.kse.dto.ProductDto;
@@ -15,11 +17,12 @@ public interface ProductMapper {
     ProductDto toDto(Product product);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "category", expression = "java(dto.getCategory() == null ? null : new Category(dto.getCategory()))")
-    @Mapping(target = "cosmicTag", expression = "java(new CosmicTag(dto.getCosmicTag()))")
+    @Mapping(target = "category.name", source = "category")
+    @Mapping(target = "cosmicTag.value", source = "cosmicTag")
     Product toDomain(ProductCreateDto dto);
 
-    @Mapping(target = "category", expression = "java(dto.getCategory() == null ? product.getCategory() : new Category(dto.getCategory()))")
-    @Mapping(target = "cosmicTag", expression = "java(dto.getCosmicTag() == null ? product.getCosmicTag() : new CosmicTag(dto.getCosmicTag()))")
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "category.name", source = "category")
+    @Mapping(target = "cosmicTag.value", source = "cosmicTag")
     void updateDomain(ProductUpdateDto dto, @MappingTarget Product product);
 }
