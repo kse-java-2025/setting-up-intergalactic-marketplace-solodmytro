@@ -1,0 +1,26 @@
+cosmo:
+  external:
+    base-url: http://localhost:8089
+
+feature:
+  cosmoCats:
+    enabled: true
+  kittyProducts:
+    enabled: false
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/cosmo_cats
+    username: cosmo_user
+    password: cosmo_pass
+    driver-class-name: org.postgresql.Driver
+
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yml
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect

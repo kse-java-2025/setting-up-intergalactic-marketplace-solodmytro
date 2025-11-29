@@ -1,0 +1,61 @@
+databaseChangeLog:
+  - changeSet:
+      id: 07-unique-constraints
+      author: LazarenkoDmytro
+      changes:
+        - addUniqueConstraint:
+            tableName: users
+            columnNames: email
+            constraintName: uq_users_email
+
+        - addUniqueConstraint:
+            tableName: product
+            columnNames: category_id, name
+            constraintName: uq_product_name_category
+
+  - changeSet:
+      id: 08-add-indexes
+      author: LazarenkoDmytro
+      changes:
+        - createIndex:
+            tableName: product
+            indexName: idx_product_name
+            columns:
+              - column:
+                  name: name
+
+        - createIndex:
+            tableName: product
+            indexName: idx_product_category_id
+            columns:
+              - column:
+                  name: category_id
+
+        - createIndex:
+            tableName: orders
+            indexName: idx_orders_user_id
+            columns:
+              - column:
+                  name: user_id
+
+        - createIndex:
+            tableName: order_item
+            indexName: idx_order_item_order_id
+            columns:
+              - column:
+                  name: order_id
+
+        - createIndex:
+            tableName: order_item
+            indexName: idx_order_item_product_id
+            columns:
+              - column:
+                  name: product_id
+
+        - createIndex:
+            tableName: users
+            indexName: idx_users_email
+            unique: true
+            columns:
+              - column:
+                  name: email

@@ -1,0 +1,19 @@
+databaseChangeLog:
+  - changeSet:
+      id: 000-initial
+      author: LazarenkoDmytro
+      changes:
+        - tagDatabase:
+            tag: initial
+
+  - include:
+      relativeToChangelogFile: true
+      file: db.changelog-01-init-tables.yml
+
+  - include:
+      relativeToChangelogFile: true
+      file: db.changelog-02-constraints-indexes.yml
+
+  - include:
+      relativeToChangelogFile: true
+      file: db.changelog-03-order-natural-id.yml
