@@ -2,7 +2,13 @@ package ua.org.kse.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import ua.org.kse.domain.product.Category;
 import ua.org.kse.domain.product.CosmicTag;
 import ua.org.kse.domain.product.Product;
 import ua.org.kse.dto.ProductCreateDto;
@@ -14,12 +20,10 @@ import ua.org.kse.error.NotFoundException;
 import ua.org.kse.external.CosmicDictionaryClient;
 import ua.org.kse.external.TagServiceException;
 import ua.org.kse.mapper.ProductMapper;
+import ua.org.kse.repository.CategoryRepository;
+import ua.org.kse.repository.ProductRepository;
 
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @Slf4j
@@ -27,52 +31,55 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ProductServiceImpl implements ProductService {
     private final ProductMapper mapper;
     private final CosmicDictionaryClient cosmicClient;
-    private final Map<String, Product> store = new ConcurrentHashMap<>();
+    private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
 
     @Override
+    @Transactional
     public ProductDto create(ProductCreateDto dto) {
         validateCosmicTag(dto.cosmicTag());
 
+        Category category = resolveCategory(dto.category());
+
         Product domain = mapper.toDomain(dto);
-        String id = UUID.randomUUID().toString();
-        domain.setId(id);
-        store.put(id, domain);
-        return mapper.toDto(domain);
+        domain.setCategory(category);
+
+        Product saved = productRepository.save(domain);
+        return mapper.toDto(saved);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ProductDto getById(String id) {
-        Product p = getExistingProductOrThrow(id);
+        Long numericId = parseIdOrThrowNotFound(id);
+        Product p = productRepository.findById(numericId)
+            .orElseThrow(() -> new NotFoundException("Product with id " + id + " not found"));
         return mapper.toDto(p);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ProductListDto getAll(int page, int size) {
-        List<Product> all = store.values().stream()
-            .sorted(Comparator.comparing(Product::getName, Comparator.nullsLast(String::compareTo)))
+        if (size <= 0) {
+            size = 10;
+        }
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("name").ascending());
+        Page<Product> result = productRepository.findAll(pageable);
+
+        List<ProductDto> items = result.getContent().stream()
+            .map(mapper::toDto)
             .toList();
 
-        int totalItems = all.size();
-
-        long startLong = Math.clamp((long) page * size, 0L, totalItems);
-        long endLong = Math.clamp(startLong + size, startLong, totalItems);
-
-        int start = (int) startLong;
-        int end = (int) endLong;
-
-        List<Product> slice = all.subList(start, end);
-
         ProductListDto out = new ProductListDto();
-        out.setItems(slice.stream().map(mapper::toDto).toList());
-        out.setPage(page);
-        out.setSize(size);
-        out.setTotalItems(totalItems);
+        out.setItems(items);
+        out.setPage(result.getNumber());
+        out.setSize(result.getSize());
+        out.setTotalItems(result.getTotalElements());
 
-        int totalPages;
-        if (size <= 0) {
+        int totalPages = result.getTotalPages();
+        if (totalPages == 0) {
             totalPages = 1;
-        } else {
-            totalPages = Math.max(1, (int) Math.ceil((double) totalItems / size));
         }
         out.setTotalPages(totalPages);
 
@@ -80,10 +87,18 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional
     public ProductDto update(String id, ProductUpdateDto dto) {
-        Product existing = getExistingProductOrThrow(id);
+        Long numericId = parseIdOrThrowNotFound(id);
+        Product existing = productRepository.findById(numericId)
+            .orElseThrow(() -> new NotFoundException("Product with id " + id + " not found"));
 
         validateCosmicTag(dto.getCosmicTag());
+
+        if (dto.getCategory() != null) {
+            Category category = resolveCategory(dto.getCategory());
+            existing.setCategory(category);
+        }
 
         mapper.updateDomain(dto, existing);
 
@@ -91,21 +106,34 @@ public class ProductServiceImpl implements ProductService {
             existing.setCosmicTag(new CosmicTag(dto.getCosmicTag()));
         }
 
-        store.put(id, existing);
-        return mapper.toDto(existing);
+        Product saved = productRepository.save(existing);
+        return mapper.toDto(saved);
     }
 
     @Override
+    @Transactional
     public void delete(String id) {
-        store.remove(id);
+        Long numericId;
+        try {
+            numericId = Long.valueOf(id);
+        } catch (NumberFormatException ex) {
+            return;
+        }
+
+        if (!productRepository.existsById(numericId)) {
+            return;
+        }
+
+        productRepository.deleteById(numericId);
     }
 
-    private Product getExistingProductOrThrow(String id) {
-        Product existing = store.get(id);
-        if (existing == null) {
-            throw new NotFoundException("Product with id " + id + " not found");
+    private Category resolveCategory(String categoryName) {
+        if (categoryName == null || categoryName.isBlank()) {
+            throw new BadRequestException("Category must be provided");
         }
-        return existing;
+
+        return categoryRepository.findByName(categoryName)
+            .orElseGet(() -> categoryRepository.save(new Category(null, categoryName)));
     }
 
     private void validateCosmicTag(String cosmicTag) {
@@ -121,6 +149,14 @@ public class ProductServiceImpl implements ProductService {
         } catch (TagServiceException ex) {
             log.error("Failed to validate cosmicTag '{}' with external dictionary", cosmicTag, ex);
             throw ex;
+        }
+    }
+
+    private Long parseIdOrThrowNotFound(String id) {
+        try {
+            return Long.valueOf(id);
+        } catch (NumberFormatException ex) {
+            throw new NotFoundException("Product with id " + id + " not found");
         }
     }
 }

@@ -7,6 +7,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import ua.org.kse.domain.product.Category;
+import ua.org.kse.domain.product.Product;
 import ua.org.kse.dto.ProductCreateDto;
 import ua.org.kse.dto.ProductDto;
 import ua.org.kse.dto.ProductListDto;
@@ -17,11 +21,21 @@ import ua.org.kse.external.CosmicDictionaryClient;
 import ua.org.kse.external.TagServiceException;
 import ua.org.kse.mapper.ProductMapper;
 import ua.org.kse.mapper.ProductMapperImpl;
+import ua.org.kse.repository.CategoryRepository;
+import ua.org.kse.repository.ProductRepository;
 
 import java.math.BigDecimal;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
@@ -34,12 +48,86 @@ class ProductServiceImplTest {
     @Mock
     private CosmicDictionaryClient cosmicClient;
 
+    @Mock
+    private ProductRepository productRepository;
+
+    @Mock
+    private CategoryRepository categoryRepository;
+
     @InjectMocks
     private ProductServiceImpl service;
 
+    private Map<Long, Product> productStore;
+    private Map<String, Category> categoryStore;
+    private AtomicLong productSeq;
+    private AtomicLong categorySeq;
+
     @BeforeEach
     void setUp() {
+        productStore = new ConcurrentHashMap<>();
+        categoryStore = new ConcurrentHashMap<>();
+        productSeq = new AtomicLong(0);
+        categorySeq = new AtomicLong(0);
+
         lenient().when(cosmicClient.isAllowedTag(anyString())).thenReturn(true);
+
+        lenient().when(categoryRepository.findByName(anyString()))
+            .thenAnswer(invocation -> {
+                String name = invocation.getArgument(0);
+                return Optional.ofNullable(categoryStore.get(name));
+            });
+
+        lenient().when(categoryRepository.save(any(Category.class)))
+            .thenAnswer(invocation -> {
+                Category c = invocation.getArgument(0);
+                if (c.getId() == null) {
+                    c.setId(categorySeq.incrementAndGet());
+                }
+                categoryStore.put(c.getName(), c);
+                return c;
+            });
+
+        lenient().when(productRepository.save(any(Product.class)))
+            .thenAnswer(invocation -> {
+                Product p = invocation.getArgument(0);
+                if (p.getId() == null) {
+                    p.setId(productSeq.incrementAndGet());
+                }
+                productStore.put(p.getId(), p);
+                return p;
+            });
+
+        lenient().when(productRepository.findById(anyLong()))
+            .thenAnswer(invocation -> {
+                Long id = invocation.getArgument(0);
+                return Optional.ofNullable(productStore.get(id));
+            });
+
+        lenient().when(productRepository.existsById(anyLong()))
+            .thenAnswer(invocation -> {
+                Long id = invocation.getArgument(0);
+                return productStore.containsKey(id);
+            });
+
+        lenient().doAnswer(invocation -> {
+            Long id = invocation.getArgument(0);
+            productStore.remove(id);
+            return null;
+        }).when(productRepository).deleteById(anyLong());
+
+        lenient().when(productRepository.findAll(any(Pageable.class)))
+            .thenAnswer(invocation -> {
+                Pageable pageable = invocation.getArgument(0);
+                List<Product> sorted = productStore.values().stream()
+                    .sorted(Comparator.comparing(Product::getName))
+                    .toList();
+
+                int start = (int) pageable.getOffset();
+                int end = Math.min(start + pageable.getPageSize(), sorted.size());
+                List<Product> content = start >= sorted.size() ? List.of() : sorted.subList(start, end);
+
+                return new PageImpl<>(content, pageable, sorted.size());
+            });
     }
 
     @Test

@@ -1,0 +1,18 @@
+databaseChangeLog:
+  - changeSet:
+      id: 09-add-order-natural-id
+      author: LazarenkoDmytro
+      changes:
+        - addColumn:
+            tableName: orders
+            columns:
+              - column:
+                  name: order_number
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+
+        - addUniqueConstraint:
+            tableName: orders
+            columnNames: order_number
+            constraintName: uq_orders_order_number
