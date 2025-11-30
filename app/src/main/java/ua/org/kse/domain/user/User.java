@@ -1,4 +1,4 @@
-package ua.org.kse.domain.product;
+package ua.org.kse.domain.user;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -12,16 +12,19 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "category")
+@Table(name = "users")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Category {
+public class User {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "category_seq_gen")
-    @SequenceGenerator(name = "category_seq_gen", sequenceName = "category_seq", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "users_seq_gen")
+    @SequenceGenerator(name = "users_seq_gen", sequenceName = "users_seq", allocationSize = 1)
     private Long id;
 
-    @Column(name = "name", nullable = false, length = 255)
-    private String name;
+    @Column(name = "email", nullable = false, unique = true, length = 255)
+    private String email;
+
+    @Column(name = "full_name", length = 255)
+    private String fullName;
 }
