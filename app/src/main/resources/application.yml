@@ -1,3 +1,9 @@
 cosmo:
   external:
     base-url: http://localhost:8089
+
+feature:
+  cosmoCats:
+    enabled: true
+  kittyProducts:
+    enabled: false
