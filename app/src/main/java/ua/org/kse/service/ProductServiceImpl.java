@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ua.org.kse.domain.product.Category;
@@ -35,6 +36,7 @@ public class ProductServiceImpl implements ProductService {
     private final CategoryRepository categoryRepository;
 
     @Override
+    @PreAuthorize("hasAuthority('SCOPE_products:write')")
     @Transactional
     public ProductDto create(ProductCreateDto dto) {
         validateCosmicTag(dto.cosmicTag());
@@ -49,6 +51,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @PreAuthorize("hasAnyAuthority('SCOPE_products:read','SCOPE_products:write')")
     @Transactional(readOnly = true)
     public ProductDto getById(String id) {
         Long numericId = parseIdOrThrowNotFound(id);
@@ -58,6 +61,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @PreAuthorize("hasAnyAuthority('SCOPE_products:read','SCOPE_products:write')")
     @Transactional(readOnly = true)
     public ProductListDto getAll(int page, int size) {
         if (size <= 0) {
@@ -87,6 +91,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @PreAuthorize("hasAuthority('SCOPE_products:write')")
     @Transactional
     public ProductDto update(String id, ProductUpdateDto dto) {
         Long numericId = parseIdOrThrowNotFound(id);
@@ -111,6 +116,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @PreAuthorize("hasAuthority('SCOPE_products:write')")
     @Transactional
     public void delete(String id) {
         Long numericId;
