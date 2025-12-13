@@ -1,0 +1,24 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/.well-known/jwks.json"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "keys": [
+        {
+          "kty": "RSA",
+          "use": "sig",
+          "kid": "cosmo-kid-1",
+          "alg": "RS256",
+          "n": "6EAHWaLp2a_WNE8EYwiiIz8bsVYDG1X86T_Fa-ocXm2UFIiwBMHkfiD6DntvUv_QwVUrKQ7TzW01EJhv7mWK2EyBId1HDm87nv7KDvoSYb0yZqIteALF4fr5TZm0tjgymeslPNaQTqIrrWCjagtsunooLXvBnlP5GC8Vpd_ZMOry7yPNDdEXISyg1oNXzU0RtQ-E9P5DxlgqDIgyRyCxgLSx4nWjjvG1u1pTsthDbesBwUzNeBTNUcZcVOXA2TPxeVWIZMrj8GRIssAGMRXxYJ_doOJOJwY41yjm1Fx9JrYl5ALYJxXE-7tPpItQFbvl-z-6bjECPX5ji5tkqCbIgw",
+          "e": "AQAB"
+        }
+      ]
+    }
+  }
+}
