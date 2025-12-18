@@ -11,7 +11,7 @@ import ua.org.kse.dto.ProductListDto;
 import ua.org.kse.dto.ProductUpdateDto;
 import ua.org.kse.error.CosmicTagNotAllowedException;
 import ua.org.kse.error.ProductNotFoundException;
-import ua.org.kse.external.CosmicDictionaryClient;
+import ua.org.kse.external.CosmicTagPolicy;
 import ua.org.kse.external.TagServiceException;
 import ua.org.kse.mapper.ProductMapper;
 
@@ -26,11 +26,11 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
     private final ProductMapper mapper;
-    private final CosmicDictionaryClient cosmicClient;
+    private final CosmicTagPolicy cosmicTagPolicy;
     private final Map<String, Product> store = new ConcurrentHashMap<>();
 
     @Override
-    public ProductDto create(ProductCreateDto dto) {
+    public ProductDto createProduct(ProductCreateDto dto) {
         validateCosmicTag(dto.cosmicTag());
 
         Product domain = mapper.toDomain(dto);
@@ -41,13 +41,13 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ProductDto getById(String id) {
+    public ProductDto getProductById(String id) {
         Product p = getExistingProductOrThrow(id);
         return mapper.toDto(p);
     }
 
     @Override
-    public ProductListDto getAll(int page, int size) {
+    public ProductListDto getProducts(int page, int size) {
         List<Product> all = store.values().stream()
             .sorted(Comparator.comparing(Product::getName, Comparator.nullsLast(String::compareTo)))
             .toList();
@@ -80,7 +80,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ProductDto update(String id, ProductUpdateDto dto) {
+    public ProductDto updateProduct(String id, ProductUpdateDto dto) {
         Product existing = getExistingProductOrThrow(id);
 
         validateCosmicTag(dto.getCosmicTag());
@@ -96,7 +96,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public void delete(String id) {
+    public void deleteProduct(String id) {
         store.remove(id);
     }
 
@@ -114,7 +114,7 @@ public class ProductServiceImpl implements ProductService {
         }
 
         try {
-            if (!cosmicClient.isAllowedTag(cosmicTag)) {
+            if (!cosmicTagPolicy.isAllowed(cosmicTag)) {
                 throw new CosmicTagNotAllowedException(cosmicTag);
             }
         } catch (TagServiceException ex) {

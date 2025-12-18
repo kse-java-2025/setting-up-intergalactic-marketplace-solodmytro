@@ -31,28 +31,28 @@ public class ProductController {
     public ResponseEntity<ProductListDto> getAll(
         @RequestParam(defaultValue = "0") @Min(0) int page,
         @RequestParam(defaultValue = "10") @Min(1) int size) {
-        return ResponseEntity.ok(service.getAll(page, size));
+        return ResponseEntity.ok(service.getProducts(page, size));
     }
 
     @PostMapping
     public ResponseEntity<ProductDto> create(@Valid @RequestBody ProductCreateDto dto) {
-        var created = service.create(dto);
+        var created = service.createProduct(dto);
         return ResponseEntity.status(201).body(created);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ProductDto> getById(@PathVariable String id) {
-        return ResponseEntity.ok(service.getById(id));
+        return ResponseEntity.ok(service.getProductById(id));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ProductDto> update(@PathVariable String id, @Valid @RequestBody ProductUpdateDto dto) {
-        return ResponseEntity.ok(service.update(id, dto));
+        return ResponseEntity.ok(service.updateProduct(id, dto));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable String id) {
-        service.delete(id);
+        service.deleteProduct(id);
         return ResponseEntity.noContent().build();
     }
 }

@@ -49,7 +49,7 @@ class ProductControllerTest {
         dto.setPrice(BigDecimal.valueOf(19.99));
         dto.setCosmicTag("star-delicacy");
 
-        when(service.create(any(ProductCreateDto.class))).thenReturn(dto);
+        when(service.createProduct(any(ProductCreateDto.class))).thenReturn(dto);
 
         String body = """
             {
@@ -140,7 +140,7 @@ class ProductControllerTest {
         list.setTotalItems(1);
         list.setTotalPages(1);
 
-        when(service.getAll(0, 10)).thenReturn(list);
+        when(service.getProducts(0, 10)).thenReturn(list);
 
         mockMvc.perform(get("/api/v1/products")
                 .param("page", "0")
@@ -164,7 +164,7 @@ class ProductControllerTest {
         dto.setPrice(BigDecimal.valueOf(29.99));
         dto.setCosmicTag("star-premium");
 
-        when(service.update(eq("123"), any(ProductUpdateDto.class))).thenReturn(dto);
+        when(service.updateProduct(eq("123"), any(ProductUpdateDto.class))).thenReturn(dto);
 
         String body = """
             {
