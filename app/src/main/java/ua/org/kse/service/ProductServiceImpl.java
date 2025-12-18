@@ -9,8 +9,8 @@ import ua.org.kse.dto.ProductCreateDto;
 import ua.org.kse.dto.ProductDto;
 import ua.org.kse.dto.ProductListDto;
 import ua.org.kse.dto.ProductUpdateDto;
-import ua.org.kse.error.BadRequestException;
-import ua.org.kse.error.NotFoundException;
+import ua.org.kse.error.CosmicTagNotAllowedException;
+import ua.org.kse.error.ProductNotFoundException;
 import ua.org.kse.external.CosmicDictionaryClient;
 import ua.org.kse.external.TagServiceException;
 import ua.org.kse.mapper.ProductMapper;
@@ -103,7 +103,7 @@ public class ProductServiceImpl implements ProductService {
     private Product getExistingProductOrThrow(String id) {
         Product existing = store.get(id);
         if (existing == null) {
-            throw new NotFoundException("Product with id " + id + " not found");
+            throw new ProductNotFoundException(id);
         }
         return existing;
     }
@@ -115,8 +115,7 @@ public class ProductServiceImpl implements ProductService {
 
         try {
             if (!cosmicClient.isAllowedTag(cosmicTag)) {
-                throw new BadRequestException(
-                    "cosmicTag '" + cosmicTag + "' is not allowed by external dictionary");
+                throw new CosmicTagNotAllowedException(cosmicTag);
             }
         } catch (TagServiceException ex) {
             log.error("Failed to validate cosmicTag '{}' with external dictionary", cosmicTag, ex);
