@@ -12,10 +12,12 @@ import ua.org.kse.error.FeatureNotAvailableException;
 public class FeatureToggleAspect {
     private final FeatureToggleService featureToggleService;
 
-    @Before("execution(* ua.org.kse.service.CosmoCatService.getCosmoCats(..))")
-    public void checkCosmoCatsFeature() {
-        if (!featureToggleService.isCosmoCatsEnabled()) {
-            throw new FeatureNotAvailableException("Cosmo Cats feature is disabled");
+    @Before("@annotation(guard)")
+    public void checkFeatureFlag(FeatureGuard guard) {
+        String feature = guard.value();
+
+        if (!featureToggleService.isEnabled(feature)) {
+            throw new FeatureNotAvailableException(feature);
         }
     }
 }
