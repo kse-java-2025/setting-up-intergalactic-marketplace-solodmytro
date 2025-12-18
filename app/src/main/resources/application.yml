@@ -2,3 +2,9 @@ cosmo:
   external:
     base-url: http://localhost:8089
     terms-path: /api/terms
+
+feature:
+  cosmoCats:
+    enabled: true
+  kittyProducts:
+    enabled: false
