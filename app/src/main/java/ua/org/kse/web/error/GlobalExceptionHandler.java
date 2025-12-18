@@ -10,8 +10,8 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import ua.org.kse.error.BadRequestException;
-import ua.org.kse.error.NotFoundException;
+import ua.org.kse.error.CosmicTagNotAllowedException;
+import ua.org.kse.error.ProductNotFoundException;
 import ua.org.kse.external.TagServiceException;
 
 import java.net.URI;
@@ -67,6 +67,19 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, body);
     }
 
+    @ExceptionHandler(CosmicTagNotAllowedException.class)
+    public ResponseEntity<ProblemDetail> handleCosmicTagNotAllowed(CosmicTagNotAllowedException ex,
+                                                                   HttpServletRequest req) {
+        ProblemDetail body = createProblemDetail(
+            HttpStatus.BAD_REQUEST,
+            ex.getMessage(),
+            "cosmic-tag-not-allowed",
+            req
+        );
+
+        return buildResponse(HttpStatus.BAD_REQUEST, body);
+    }
+
     @ExceptionHandler(TagServiceException.class)
     public ResponseEntity<ProblemDetail> handleTagService(TagServiceException ex, HttpServletRequest req) {
         ProblemDetail body = createProblemDetail(
@@ -79,28 +92,16 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.SERVICE_UNAVAILABLE, body);
     }
 
-    @ExceptionHandler(NotFoundException.class)
-    public ResponseEntity<ProblemDetail> handleNotFound(NotFoundException ex, HttpServletRequest req) {
+    @ExceptionHandler(ProductNotFoundException.class)
+    public ResponseEntity<ProblemDetail> handleProductNotFound(ProductNotFoundException ex, HttpServletRequest req) {
         ProblemDetail body = createProblemDetail(
             HttpStatus.NOT_FOUND,
             ex.getMessage(),
-            "not-found",
+            "product-not-found",
             req
         );
 
         return buildResponse(HttpStatus.NOT_FOUND, body);
-    }
-
-    @ExceptionHandler(BadRequestException.class)
-    public ResponseEntity<ProblemDetail> handleBadRequest(BadRequestException ex, HttpServletRequest req) {
-        ProblemDetail body = createProblemDetail(
-            HttpStatus.BAD_REQUEST,
-            ex.getMessage(),
-            "bad-request",
-            req
-        );
-
-        return buildResponse(HttpStatus.BAD_REQUEST, body);
     }
 
     @ExceptionHandler(Exception.class)
