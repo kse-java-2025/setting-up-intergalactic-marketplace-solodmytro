@@ -6,13 +6,13 @@ import ua.org.kse.dto.ProductListDto;
 import ua.org.kse.dto.ProductUpdateDto;
 
 public interface ProductService {
-    ProductDto create(ProductCreateDto dto);
+    ProductDto createProduct(ProductCreateDto dto);
 
-    ProductDto getById(String id);
+    ProductDto getProductById(String id);
 
-    ProductListDto getAll(int page, int size);
+    ProductListDto getProducts(int page, int size);
 
-    ProductDto update(String id, ProductUpdateDto dto);
+    ProductDto updateProduct(String id, ProductUpdateDto dto);
 
-    void delete(String id);
+    void deleteProduct(String id);
 }

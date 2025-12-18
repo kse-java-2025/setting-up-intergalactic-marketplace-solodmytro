@@ -2,32 +2,30 @@ package ua.org.kse.external;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import ua.org.kse.config.CosmoExternalProperties;
 
 @Service
 public class CosmicDictionaryClient {
     private final RestClient client;
-    private final CosmicDictionaryMapper mapper;
+    private final CosmoExternalProperties props;
 
-    public CosmicDictionaryClient(RestClient cosmicRestClient, CosmicDictionaryMapper mapper) {
+    public CosmicDictionaryClient(RestClient cosmicRestClient, CosmoExternalProperties props) {
         this.client = cosmicRestClient;
-        this.mapper = mapper;
+        this.props = props;
     }
 
-    public boolean isAllowedTag(String tag) {
-        if (tag == null || tag.isBlank()) {
-            return true;
-        }
+    public String[] fetchAllowedTerms() {
+        String path = (props.termsPath() == null || props.termsPath().isBlank())
+            ? "/api/terms"
+            : props.termsPath();
 
-        String[] body;
         try {
-            body = client.get()
-                .uri("/api/terms")
+            return client.get()
+                .uri(path)
                 .retrieve()
                 .body(String[].class);
         } catch (Exception ex) {
-            throw new TagServiceException("Failed to fetch allowed cosmic tags", ex);
+            throw new TagServiceException(ex);
         }
-
-        return mapper.isTagAllowed(tag, body);
     }
 }

@@ -9,8 +9,12 @@ class RestClientConfigTest {
     @Test
     void cosmicRestClient_createsClient() {
         RestClientConfig config = new RestClientConfig();
+        CosmoExternalProperties props = new CosmoExternalProperties(
+            "https://example.com",
+            "/api/terms"
+        );
 
-        RestClient client = config.cosmicRestClient("https://example.com");
+        RestClient client = config.cosmicRestClient(props);
 
         assertThat(client).isNotNull();
     }

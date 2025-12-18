@@ -11,9 +11,9 @@ import ua.org.kse.dto.ProductCreateDto;
 import ua.org.kse.dto.ProductDto;
 import ua.org.kse.dto.ProductListDto;
 import ua.org.kse.dto.ProductUpdateDto;
-import ua.org.kse.error.BadRequestException;
-import ua.org.kse.error.NotFoundException;
-import ua.org.kse.external.CosmicDictionaryClient;
+import ua.org.kse.error.CosmicTagNotAllowedException;
+import ua.org.kse.error.ProductNotFoundException;
+import ua.org.kse.external.CosmicTagPolicy;
 import ua.org.kse.external.TagServiceException;
 import ua.org.kse.mapper.ProductMapper;
 import ua.org.kse.mapper.ProductMapperImpl;
@@ -32,18 +32,18 @@ class ProductServiceImplTest {
     private ProductMapper mapper = new ProductMapperImpl();
 
     @Mock
-    private CosmicDictionaryClient cosmicClient;
+    private CosmicTagPolicy cosmicTagPolicy;
 
     @InjectMocks
     private ProductServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        lenient().when(cosmicClient.isAllowedTag(anyString())).thenReturn(true);
+        lenient().when(cosmicTagPolicy.isAllowed(anyString())).thenReturn(true);
     }
 
     @Test
-    void create_whenTagAllowed_savesAndReturnsDto() {
+    void create_Product_whenTagAllowed_savesAndReturnsDto() {
         ProductCreateDto dto = new ProductCreateDto(
             "Moon Cheese",
             "Cheese from the dark side",
@@ -52,7 +52,7 @@ class ProductServiceImplTest {
             "star-delicacy"
         );
 
-        ProductDto result = service.create(dto);
+        ProductDto result = service.createProduct(dto);
 
         assertThat(result.getId()).isNotNull();
         assertThat(result.getName()).isEqualTo("Moon Cheese");
@@ -61,8 +61,8 @@ class ProductServiceImplTest {
     }
 
     @Test
-    void create_whenTagNotAllowed_throwsBadRequestException() {
-        when(cosmicClient.isAllowedTag("boring-tag")).thenReturn(false);
+    void create_Product_whenTagNotAllowed_throwsCosmicTagNotAllowedException() {
+        when(cosmicTagPolicy.isAllowed("boring-tag")).thenReturn(false);
 
         ProductCreateDto dto = new ProductCreateDto(
             "Bad Product",
@@ -72,13 +72,13 @@ class ProductServiceImplTest {
             "boring-tag"
         );
 
-        assertThrows(BadRequestException.class, () -> service.create(dto));
+        assertThrows(CosmicTagNotAllowedException.class, () -> service.createProduct(dto));
     }
 
     @Test
-    void create_whenTagServiceFails_throwsTagServiceException() {
-        when(cosmicClient.isAllowedTag("star-delicacy"))
-            .thenThrow(new TagServiceException("boom", new RuntimeException()));
+    void create_Product_whenTagServiceFails_throwsTagServiceException() {
+        when(cosmicTagPolicy.isAllowed("star-delicacy"))
+            .thenThrow(new TagServiceException(new RuntimeException("boom")));
 
         ProductCreateDto dto = new ProductCreateDto(
             "Moon Cheese",
@@ -88,11 +88,11 @@ class ProductServiceImplTest {
             "star-delicacy"
         );
 
-        assertThrows(TagServiceException.class, () -> service.create(dto));
+        assertThrows(TagServiceException.class, () -> service.createProduct(dto));
     }
 
     @Test
-    void getById_whenExisting_returnsDto() {
+    void getProductById_whenExisting_returnsDto() {
         ProductCreateDto dto = new ProductCreateDto(
             "Nebula Ice Cream",
             "Cosmic dessert",
@@ -101,21 +101,21 @@ class ProductServiceImplTest {
             "galaxy-cream"
         );
 
-        ProductDto created = service.create(dto);
+        ProductDto created = service.createProduct(dto);
 
-        ProductDto found = service.getById(created.getId());
+        ProductDto found = service.getProductById(created.getId());
 
         assertThat(found.getId()).isEqualTo(created.getId());
         assertThat(found.getName()).isEqualTo("Nebula Ice Cream");
     }
 
     @Test
-    void getById_whenNotExisting_throwsNotFound() {
-        assertThrows(NotFoundException.class, () -> service.getById("non-existing-id"));
+    void getProductById_whenNotExisting_throwsNotFound() {
+        assertThrows(ProductNotFoundException.class, () -> service.getProductById("non-existing-id"));
     }
 
     @Test
-    void getAll_returnsSortedAndPagedProducts() {
+    void getProducts_returnsSortedAndPagedProducts() {
         ProductCreateDto dto1 = new ProductCreateDto(
             "Zeta Cola",
             "Space drink",
@@ -138,13 +138,13 @@ class ProductServiceImplTest {
             "comet-candy"
         );
 
-        service.create(dto1);
-        service.create(dto2);
-        service.create(dto3);
+        service.createProduct(dto1);
+        service.createProduct(dto2);
+        service.createProduct(dto3);
 
-        ProductListDto page0 = service.getAll(0, 2);
-        ProductListDto page1 = service.getAll(1, 2);
-        ProductListDto farPage = service.getAll(10, 2);
+        ProductListDto page0 = service.getProducts(0, 2);
+        ProductListDto page1 = service.getProducts(1, 2);
+        ProductListDto farPage = service.getProducts(10, 2);
 
         assertThat(page0.getItems()).hasSize(2);
         assertThat(page0.getTotalItems()).isEqualTo(3);
@@ -160,7 +160,7 @@ class ProductServiceImplTest {
     }
 
     @Test
-    void update_whenExisting_updatesFieldsAndTag() {
+    void update_Product_whenExisting_updatesFieldsAndTag() {
         ProductCreateDto createDto = new ProductCreateDto(
             "Moon Cheese",
             "Cheese from the dark side",
@@ -169,14 +169,14 @@ class ProductServiceImplTest {
             "galaxy-delicacy"
         );
 
-        ProductDto created = service.create(createDto);
+        ProductDto created = service.createProduct(createDto);
 
         ProductUpdateDto updateDto = new ProductUpdateDto();
         updateDto.setName("Moon Cheese Deluxe");
         updateDto.setPrice(BigDecimal.valueOf(29.99));
         updateDto.setCosmicTag("star-premium");
 
-        ProductDto updated = service.update(created.getId(), updateDto);
+        ProductDto updated = service.updateProduct(created.getId(), updateDto);
 
         assertThat(updated.getName()).isEqualTo("Moon Cheese Deluxe");
         assertThat(updated.getPrice()).isEqualTo(BigDecimal.valueOf(29.99));
@@ -186,15 +186,15 @@ class ProductServiceImplTest {
     }
 
     @Test
-    void update_whenNotExisting_throwsNotFound() {
+    void update_Product_whenNotExisting_throwsNotFound() {
         ProductUpdateDto dto = new ProductUpdateDto();
         dto.setCosmicTag("star-premium");
 
-        assertThrows(NotFoundException.class, () -> service.update("missing-id", dto));
+        assertThrows(ProductNotFoundException.class, () -> service.updateProduct("missing-id", dto));
     }
 
     @Test
-    void update_whenTagNotAllowed_throwsBadRequestException() {
+    void update_Product_whenTagNotAllowed_throwsCosmicTagNotAllowedException() {
         ProductCreateDto createDto = new ProductCreateDto(
             "Moon Cheese",
             "Cheese",
@@ -202,20 +202,20 @@ class ProductServiceImplTest {
             BigDecimal.valueOf(19.99),
             "star-delicacy"
         );
-        ProductDto created = service.create(createDto);
+        ProductDto created = service.createProduct(createDto);
 
         ProductUpdateDto updateDto = new ProductUpdateDto();
         updateDto.setCosmicTag("boring-tag");
 
-        when(cosmicClient.isAllowedTag("boring-tag")).thenReturn(false);
+        when(cosmicTagPolicy.isAllowed("boring-tag")).thenReturn(false);
 
         String id = created.getId();
 
-        assertThrows(BadRequestException.class, () -> service.update(id, updateDto));
+        assertThrows(CosmicTagNotAllowedException.class, () -> service.updateProduct(id, updateDto));
     }
 
     @Test
-    void delete_removesProduct() {
+    void delete_Product_removesProduct() {
         ProductCreateDto createDto = new ProductCreateDto(
             "Moon Cheese",
             "Cheese",
@@ -223,17 +223,17 @@ class ProductServiceImplTest {
             BigDecimal.valueOf(19.99),
             "star-delicacy"
         );
-        ProductDto created = service.create(createDto);
+        ProductDto created = service.createProduct(createDto);
 
-        service.delete(created.getId());
+        service.deleteProduct(created.getId());
 
         String id = created.getId();
-        assertThrows(NotFoundException.class, () -> service.getById(id));
+        assertThrows(ProductNotFoundException.class, () -> service.getProductById(id));
     }
 
     @Test
-    void getAll_whenEmptyStore_returnsEmptyList() {
-        ProductListDto list = service.getAll(0, 10);
+    void getProducts_whenEmptyStore_returnsEmptyList() {
+        ProductListDto list = service.getProducts(0, 10);
 
         assertThat(list.getItems()).isEmpty();
         assertThat(list.getTotalItems()).isZero();

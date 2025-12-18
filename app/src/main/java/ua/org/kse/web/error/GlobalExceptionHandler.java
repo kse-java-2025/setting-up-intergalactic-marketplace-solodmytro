@@ -108,7 +108,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ProblemDetail> handleGeneric(Exception ex, HttpServletRequest req) {
         ProblemDetail body = createProblemDetail(
             HttpStatus.INTERNAL_SERVER_ERROR,
-            "Unexpected error: " + ex.getClass().getSimpleName(),
+            String.format("Unexpected error: %s", ex.getClass().getSimpleName()),
             "internal-error",
             req
         );
